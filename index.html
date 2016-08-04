@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<title>jj</title>
+
+	<script src="js/jquery-1.10.2.min.js" type="text/javascript"></script>
+    <script src="js/jquery.alertWindow.min.js" type="text/javascript"></script>
+
+<style type="text/css">
+/*jQuery自定义弹出框*/
+.alertWindowContent h1,
+p{text-align: center;font-size: 18px;font-weight: bolder;}
+.alertWindowContent 
+input{width: 100px; height: 100px;cursor: pointer;-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px;}
+</style>
+	<script type="text/javascript">
+	/*弹出游戏规则*/
+	$(function(){
+        $("#input1").click(function(){
+            jQuery.alertWindow("游戏规则","    玩家只需按住任意一个键盘键，线条就会伸长，松开键盘，人物就会移动线条的长度，如果线条的长度可以到达第二堵墙的位置，则游戏继续，分数相应加1,否则游戏结束。。。");
+        });
+    });
+
+
+var ctx;
+/*定义图片*/
+var img=new Image();
+img.src="jj.png";
+var img1=new Image();
+img1.src="1.png";
+var img2=new Image();
+img2.src="2.png";
+
+/*定义三堵墙的X,Y,宽,高初始值*/
+var wall1_x=0,wall1_y=0,wall1_w=50,wall1_h=0;
+var wall2_x=0,wall2_y=0,wall2_w=0,wall2_h=0;
+var wall3_x=0,wall3_y=0,wall3_w=0,wall3_h=0;
+
+var play_x=25,play_y=325;   //人物的初始x、y坐标
+var line=0,line_x=50,line_y=353;  //定义线的长度和x、y坐标
+
+var isKeyDown=false; //键盘
+	score=0; //初始分数
+function draw(){
+
+	//画布背景
+	ctx.fillStyle="rgb(102,205,170)";
+	ctx.fillRect(0,0,400,600);
+
+	ctx.fillStyle='black';
+	//画出第一堵墙
+	ctx.fillRect(wall1_x,350,wall1_w,400);
+	//画出第二堵墙
+	wall2_x=Math.floor(Math.random()*200+25)+wall1_x+wall1_w;
+	wall2_w=Math.floor(Math.random()*60+25);
+    ctx.fillRect(wall2_x,350,wall2_w,400);
+    //画出第三堵墙
+    wall3_x=Math.floor(Math.random()*200+25)+wall2_x+wall2_w;
+    wall3_w=Math.floor(Math.random()*60+25);
+    ctx.fillRect(wall3_x,350,wall3_w,400);
+    //画出人物
+    ctx.drawImage(img,play_x,play_y,25,25);
+    myscore();
+
+}
+
+/*当键盘被按下时执行*/
+document.onkeydown=function(e){
+	isKeyDown=true;
+	/*画线条*/
+	ctx.strokeStyle='green';
+	ctx.fillStyle='green';
+	ctx.lineWidth=3;
+	ctx.lineTo(line_x,line_y);
+	ctx.moveTo(play_x+25,play_y+25);	
+	ctx.stroke();
+	line_y=line_y-5;
+	line=350-line_y;
+};
+
+/*当键盘松开时执行*/
+document.onkeyup=function(e){
+    isKeyDown=false;
+    /*线条向右伸长*/
+    line_y=353;
+    ctx.beginPath();
+    ctx.fillStyle='green';
+    ctx.strokeStyle='green';
+    ctx.lineWidth=5;
+    ctx.moveTo(play_x+25,line_y);
+    ctx.lineTo(play_x+25+line,line_y);
+    ctx.stroke();
+
+    /*清除键盘按下时画的线条*/
+    ctx.fillStyle="rgb(102,205,170)";
+    ctx.fillRect(play_x+15,350-line,20,line);
+    move();
+   };
+
+
+
+
+function move(){
+    /*移动人物*/
+   ctx.fillStyle="rgb(102,205,170)";
+   ctx.fillRect(play_x,play_y,25,25);
+    play_x=play_x+7;  //人物的移动速度
+	ctx.drawImage(img,play_x,play_y,25,25);
+	if(play_x<=line+wall1_w-25){
+		setTimeout("move();",30);
+	}
+
+else
+{
+	//当线的长度可以到达，不超过第二堵墙时，画出人物
+	if((wall1_w+line)>wall2_x && wall1_w+line<(wall2_x+wall2_w)){
+		ctx.beginPath();
+		ctx.fillStyle="rgb(102,205,170)";
+		play_x=wall2_x+wall2_w-25;
+		ctx.drawImage(img,play_x,play_y,25,25);
+		moveall();
+		score++;
+	}
+	else{
+		setTimeout("gameover();",200);
+
+	}
+}
+
+}
+
+
+function moveall(){
+	/*移动背景*/
+	ctx.fillStyle="rgb(102,205,170)";
+	ctx.fillRect(0,0,400,600);
+	ctx.fillStyle='black';
+	wall1_x--;
+	wall2_x--;
+	wall3_x--;
+	play_x--;
+	ctx.fillRect(wall1_x,350,wall1_w,300);
+	ctx.fillRect(wall2_x,350,wall2_w,300);
+	ctx.fillRect(wall3_x,350,wall3_w,300);
+	ctx.drawImage(img,play_x,play_y,25,25);
+
+	myscore();
+	if(wall2_x!=0){
+		setTimeout("moveall();",2); 
+
+	}
+	else{
+		change();
+	};
+}
+
+/*墙的变化对接*/
+function change(){
+	wall1_x=wall2_x;
+	wall1_w=wall2_w;
+	wall2_x=wall3_x;
+	wall2_w=wall3_w;
+	wall3_x=Math.floor(Math.random()*200+25)+wall2_x+wall2_w;
+	wall3_w=Math.floor(Math.random()*60+25);
+	line_x=wall1_w;
+}
+/*分数*/
+function myscore(){ 
+	ctx.fillStyle="rgb(128,0,128)";
+    ctx.font="30px Accent";
+	ctx.fillText("分数:  "+score,140 ,50);
+
+}
+
+	/*游戏结束*/
+function gameover(){
+	if (score<=2){
+	ctx.fillStyle="rgb(102,205,170)";
+	ctx.fillRect(0,0,400,600);
+	ctx.fillStyle="rgb(128,0,128)";
+    ctx.font="50px Accent";
+    ctx.fillText("游戏结束",100,150);
+    ctx.font="30px Accent";
+    ctx.fillText("你的分数："+score,115,250);
+    ctx.font="20px Accent";
+    ctx.fillText("额。。太差了",145,300);
+    ctx.drawImage(img1,140,350);
+    ctx.fillText("按F5键重新开始游戏",105,590);
+	}
+	else{
+	ctx.fillStyle="rgb(102,205,170)";
+	ctx.fillRect(0,0,400,600); 
+	ctx.fillStyle="rgb(128,0,128)";
+    ctx.font="50px Accent";
+    ctx.fillText("游戏结束",100,150);
+    ctx.font="30px Accent";
+    ctx.fillText("你的分数："+score,115,250);;
+    ctx.font="20px Accent";
+    ctx.fillText("哎哟，不错哦",145,300);
+    ctx.drawImage(img2,140,350);
+    ctx.fillText("按F5键重新开始游戏",105,590);
+   }
+}
+function init(){
+ctx = document.getElementById('canvas').getContext('2d');
+draw();
+}
+	</script>
+</head>
+
+<body onload="init();">
+<center>
+<canvas id="canvas" width="400" height="600">
+                GG
+</canvas>  
+</center>
+<center>
+<input type="button" value="游戏规则" id="input1" style="width: 100px; height: 35px;"/>
+</center>
+
+</body>
+</html>
